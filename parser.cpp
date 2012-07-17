@@ -8,4 +8,8 @@ std::vector<State> parse( std::string rawInput )
 {
 	std::vector<State> states;
 	initInput( rawInput );
+
+
+
+	return states;
 }

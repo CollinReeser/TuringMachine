@@ -42,6 +42,14 @@ std::string getToken( unsigned long long int expects )
 			return "start";
 		}
 	}
+	if ( expects & SPEED )
+	{
+		if ( rawFile.substr( pos , 5 ).compare( "speed" ) == 0 )
+		{
+			pos += 5;
+			return "speed";
+		}
+	}
 	if ( expects & ARB_SING )
 	{
 		std::string temp += rawFile.at( pos );
@@ -50,7 +58,8 @@ std::string getToken( unsigned long long int expects )
 	}
 	if ( expects & ARB_MULT )
 	{
-		
+		std::string placeholder = "PLACEHOLDER ARB_MULT";
+		throw placeholder;
 	}
 	if ( expects & STATE )
 	{
@@ -169,6 +178,14 @@ std::string tokenRequestList( unsigned long long int expects )
 	{
 		expectString += "\tKeyword: start\n\t\tUsed to denote start "
 						"state.\n";
+	}
+	if ( expects & SPEED )
+	{
+		if ( rawFile.substr( pos , 5 ).compare( "speed" ) == 0 )
+		{
+			pos += 5;
+			return "speed";
+		}
 	}
 	if ( expects & ARB_SING )
 	{

@@ -41,6 +41,7 @@ int main( int argc , char** argv )
 		return 0;
 	}
 	std::string secondArg( argv[2] );
+	std::vector<State> states;
 	if ( argc >= 3 && ( firstArg.compare( "-c" ) == 0 || 
 		firstArg.compare( "-p" ) == 0 ) )
 	{
@@ -50,12 +51,22 @@ int main( int argc , char** argv )
 			stripLineComments( rawLines );
 			stripMultiComments( rawLines );
 			std::string rawInput = collapseVectorToString( rawLines );
-			parse( rawInput );
+			states = parse( rawInput );
 		}
 		catch ( std::string msg )
 		{
 			std::cout << msg << std::endl;
+			return 0;
+		}
+		std::cout << "Parsing completed successfully on well-formed file " <<
+			secondArg << "." << std::endl;
+		if ( firstArg.compare( "-p" ) == 0 )
+		{
+			return 0;
 		}
 	}
+
+	// Do compilation here
+
 	return 0;
 }
