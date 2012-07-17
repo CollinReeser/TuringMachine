@@ -1,0 +1,62 @@
+// This implements B = { w#w | w element-of { 0 , 1 }* }
+// INCOMPLETE
+
+
+#empty _
+
+#start start
+
+
+
+state start
+if 0 -> O , R
+{
+	passOct0
+}
+
+if 1 -> I , R
+{
+	passOct1
+}
+
+
+
+state passOct0 
+if 0 -> 0 , R |
+1 -> 1 , R
+{}
+
+if # -> # , R
+{
+	check0
+}
+
+state check0
+if O -> O , R |
+I -> I , R
+{}
+
+if 0 -> O , L
+{
+	recede
+}
+
+state passOct1 
+if 0 -> 0 , R |
+1 -> 1 , R
+{}
+
+if # -> # , R
+{
+	check1
+}
+
+state check1
+if O -> O , R |
+I -> I , R
+{}
+
+if 1 -> I , L
+{
+	recede
+}
