@@ -18,17 +18,25 @@ int main( int argc , char** argv )
 	if ( firstArg.compare( "--help" ) == 0 )
 	{
 		std::cout << "Flags:\n" <<
-			"\t-c [filename] <output>:\tCompile the Turing Machine source " <<
+			"\t-o [filename] <output>:\tCompile the Turing Machine source " <<
 				"code in file [filename], optionally dictating the name of " <<
-				"the output file." <<
-			"\t-p [filename]:\tParse the Turing Machine source code in " <<
-				"file [filename]." <<
+				"the output executable in <output>.\n" <<
+			"\t-a [filename] <output>:\tCompile the Turing Machine source " <<
+				"code in file [filename] to the assembly file optionally " <<
+				"dictated by <output>, but do not link.\n" <<
+			"\t-p [filename]:\tVerbosely parse the Turing Machine source " <<
+				"code in file [filename], but do not compile.\n" <<
+			"\t-c [filename] [output] <output_2>:\tVerbosely parse and " <<
+				"compile the Turing Machine source code in file [filename], " <<
+				"output the generated assembly into file [output], and " <<
+				"optionally dictate the name of the output executable in " <<
+				"<output_2>.\n" <<
 			"\t--help:\tThis help text." << std::endl;
 		return 0;
 	}
 	if ( argc == 2 )
 	{
-		if ( firstArg.compare( "-c" ) == 0 || firstArg.compare( "-p" ) == 0 )
+		if ( firstArg.compare( "-o" ) == 0 || firstArg.compare( "-p" ) == 0 )
 		{
 			std::cout << "Expected argument after " << firstArg << ". Try \"" << 
 				argv[0] << " --help\"." << std::endl;
@@ -42,7 +50,7 @@ int main( int argc , char** argv )
 	}
 	std::string secondArg( argv[2] );
 	std::vector<State> states;
-	if ( argc >= 3 && ( firstArg.compare( "-c" ) == 0 || 
+	if ( argc >= 3 && ( firstArg.compare( "-o" ) == 0 || 
 		firstArg.compare( "-p" ) == 0 ) )
 	{
 		try
