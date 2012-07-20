@@ -25,6 +25,16 @@ private:
 	std::vector<Transition> transitions;
 };
 
-const &std::vector<State> parse( std::string rawInput , bool verbose );
+struct TuringEnv
+{
+	std::vector<State> states;
+	int speed;
+	char empty;
+	std::string start;
+	int cells;
+
+};
+
+const &TuringEnv parse( std::string rawInput , bool verbose );
 
 #endif

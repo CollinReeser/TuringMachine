@@ -51,7 +51,7 @@ int main( int argc , char** argv )
 		return 0;
 	}
 	std::string secondArg( argv[2] );
-	const std::vector<State> &states;
+	const TuringEnv &env;
 	if ( firstArg.compare( "-o" ) == 0 || firstArg.compare( "-p" ) == 0 || 
 		firstArg.compare( "-a" ) == 0 || firstArg.compare( "-c" ) == 0 )
 	{

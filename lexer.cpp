@@ -42,6 +42,14 @@ std::string getToken( unsigned long long int expects )
 			return "start";
 		}
 	}
+	if ( expects & CELLS )
+	{
+		if ( rawFile.substr( pos , 5 ).compare( "cells" ) == 0 )
+		{
+			pos += 5;
+			return "cells";
+		}
+	}
 	if ( expects & SPEED )
 	{
 		if ( rawFile.substr( pos , 5 ).compare( "speed" ) == 0 )
@@ -181,11 +189,14 @@ std::string tokenRequestList( unsigned long long int expects )
 	}
 	if ( expects & SPEED )
 	{
-		if ( rawFile.substr( pos , 5 ).compare( "speed" ) == 0 )
-		{
-			pos += 5;
-			return "speed";
-		}
+		expectString += "\tKeyword: speed\n\t\tUsed to denote tape-moving "
+						"speed.\n";
+	}
+	if ( expects & CELLS )
+	{
+		expectString += "\tKeyword: cells\n\t\tUsed to denote the number of "
+						"tape cells that are available for use in addition "
+						"to and to the right of the input cells.\n";
 	}
 	if ( expects & ARB_SING )
 	{
