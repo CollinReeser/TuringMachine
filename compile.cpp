@@ -26,13 +26,14 @@ static int castStringToInt( std::string val )
 	return num;
 }
 
-void compile( const std::vector<State> &states , bool verbose , bool link ,
+void compile( const TuringEnv &env , bool verbose , bool link ,
 	std::string asmOut , std::string execOut )
 {
 	const int arbError = -27;
 	bool useNASM = false;
 	std::vector<std::string> stateNames;
 	std::string assemblyCode;
+	int lengthOfTape;
 	// Detecting whether NASM is installed. I like NASM more than gas, therefore
 	// I will try to use NASM unless it is not installed. The assumption is that
 	// at least gas is installed
@@ -93,12 +94,12 @@ void compile( const std::vector<State> &states , bool verbose , bool link ,
 	}
 	// Terribly inefficient check to see if state names are repeated, and to
 	// populate a list of the state names to be used after this for something
-	for ( int i = 0; i < states.size(); i++ )
+	for ( int i = 0; i < env.states.size(); i++ )
 	{
-		for ( int j = i + 1; j < states.size(); j++ )
+		for ( int j = i + 1; j < env.states.size(); j++ )
 		{
-			if ( states.at(i).getName().compare( states.at(j).getName() ) 
-				== 0 )
+			if ( env.states.at(i).getName().compare( 
+				env.states.at(j).getName() ) == 0 )
 			{
 				std::string error = "  Error on compile:\n\tDuplicate state "
 					"names detected at state definitions ";
@@ -109,15 +110,15 @@ void compile( const std::vector<State> &states , bool verbose , bool link ,
 				throw error;
 			}
 		}
-		stateNames.push_back( states.at(i).getName() );
+		stateNames.push_back( env.states.at(i).getName() );
 	}
 	// Ensure that states only transition to other defined states
-	for ( int i = 0; i < states.size(); i++ )
+	for ( int i = 0; i < env.states.size(); i++ )
 	{
-		for ( int j = 0; j < states.at(i).getTransitions().size(); j++ )
+		for ( int j = 0; j < env.states.at(i).getTransitions().size(); j++ )
 		{
 			if ( std::find( stateNames.begin() , stateNames.end() , 
-				states.at(i).getTransitions().at(j).nextState ) == 
+				env.states.at(i).getTransitions().at(j).nextState ) == 
 				vector.end() )
 			{
 				std::string error = "  Error on compile:\n\tUndefined state "
@@ -128,7 +129,7 @@ void compile( const std::vector<State> &states , bool verbose , bool link ,
 				error += ". ";
 				const std::vector<std::string> &posToks = 
 					getSimilarTokens( stateNames , 
-					states.at(i).getTransitions().at(j).nextState );
+					env.states.at(i).getTransitions().at(j).nextState );
 				if ( posToks.size() > 0 )
 				{
 					error += "State names similar to token: ";
@@ -205,6 +206,42 @@ void compile( const std::vector<State> &states , bool verbose , bool link ,
 	// Set up stack frame
 	assemblyCode += "\t\tpush\tebp\n";
 	assemblyCode += "\t\tmov\t\tebp , esp\n";
+
+	// Here allocate memory for the tape
+	// We did not ask for any specific amount of cells, so get a default of 5000
+	if ( env.cells <= 0 )
+	{
+		if ( env.cells < 0 )
+		{
+			std::cout << "  Warning: Negative number of cells to allocate " <<
+				"were requested: " << env.cells << ". Defaulting to 5000 " <<
+				"cells." << std::endl;
+		}
+		lengthOfTape = 5000;
+		assemblyCode += "\t\tpush\t5000\n";
+		assemblyCode += "\t\tcall\t\tmalloc\n";
+	}
+	else
+	{
+		if ( env.cells > 0 && env.cells < 150 )
+		{
+			std::cout << "  Warning: Very small number of cells requested: " <<
+				env.cells << ". Compilation may fail, or execution may give " <<
+				"unexpected results because of the wrap-around behavior of " <<
+				"simulator." << std::endl;
+		}
+		lengthOfTape = env.cells;
+		assemblyCode += "\t\tpush\t";
+		assemblyCode += castIntToString( env.cells );
+		assemblyCode += "\n";
+		assemblyCode += "\t\tcall\t\tmalloc\n";
+	}
+	// Now the pointer to the beginning of the allocated tape should be in
+	// eax. Probably gonna want to store that pointer in a different
+	// register
+
+	// HERE, USE REP TO INITIALIZE THE TAPE TO BE FILLED WITH EMPTY SYMBOLS
+	// AS REQUESTED BY THE PROGRAMMER
 
 	// HERE PUT IN THE ACTUAL COMPILED CODE
 

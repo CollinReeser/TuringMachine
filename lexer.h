@@ -20,6 +20,8 @@
 #define PIPE		4096
 #define L_BRACE		8192
 #define R_BRACE		16384
+#define SPEED		32768
+#define CELLS		65536
 
 static std::string rawFile;
 

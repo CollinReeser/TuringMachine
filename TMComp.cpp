@@ -51,7 +51,7 @@ int main( int argc , char** argv )
 		return 0;
 	}
 	std::string secondArg( argv[2] );
-	const std::vector<State> &states;
+	const TuringEnv &env;
 	if ( firstArg.compare( "-o" ) == 0 || firstArg.compare( "-p" ) == 0 || 
 		firstArg.compare( "-a" ) == 0 || firstArg.compare( "-c" ) == 0 )
 	{
@@ -61,7 +61,7 @@ int main( int argc , char** argv )
 			stripLineComments( rawLines );
 			stripMultiComments( rawLines );
 			std::string rawInput = collapseVectorToString( rawLines );
-			states = parse( rawInput , ( ( firstArg.compare( "-c" ) == 0 ||
+			env = parse( rawInput , ( ( firstArg.compare( "-c" ) == 0 ||
 				firstArg.compare( "-p" ) == 0 ) ? true : false ) );
 		}
 		catch ( std::string msg )
@@ -98,7 +98,7 @@ int main( int argc , char** argv )
 	{
 		try
 		{
-			compile( states , true , true , outfileOne , outfileTwo );
+			compile( env , true , true , outfileOne , outfileTwo );
 		}
 		catch ( std::string msg )
 		{
@@ -110,7 +110,7 @@ int main( int argc , char** argv )
 	{
 		try
 		{
-			compile( states , false , true , outfileOne , nullString );
+			compile( env , false , true , outfileOne , nullString );
 		}
 		catch ( std::string msg )
 		{
@@ -122,7 +122,7 @@ int main( int argc , char** argv )
 	{
 		try
 		{
-			compile( states , false , false , outfileOne , nullString );
+			compile( env , false , false , outfileOne , nullString );
 		}
 		catch ( std::string msg )
 		{
