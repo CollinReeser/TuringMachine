@@ -236,12 +236,28 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		assemblyCode += "\n";
 		assemblyCode += "\t\tcall\t\tmalloc\n";
 	}
-	// Now the pointer to the beginning of the allocated tape should be in
-	// eax. Probably gonna want to store that pointer in a different
-	// register
+	// Pop malloc arg off stack
+	assemblyCode += "\t\tpop\t\tedx\n";
 
-	// HERE, USE REP TO INITIALIZE THE TAPE TO BE FILLED WITH EMPTY SYMBOLS
-	// AS REQUESTED BY THE PROGRAMMER
+	// Move array pointer into edi for rep, and into edx for storing the pointer
+	assemblyCode += "\t\tmov\t\tedx , eax\n";
+	assemblyCode += "\t\tmov\t\tedi , eax\n";
+
+	// Initialize ecx counter for rep
+	assemblyCode += "\t\tmov\t\tecx , ";
+	assemblyCode += castIntToString( lengthOfTape );
+	assemblyCode += "\n";
+
+	// Initialize value that will be stored in every cell with rep
+	assemblyCode += "\t\tmov\t\tal , ";
+	assemblyCode += env.empty;
+	assemblyCode += "\n";
+
+	// Initialize the tape
+	assemblyCode += "\t\trep\t\tstosb\n";
+
+	// edx = pointer to tape
+	// eax , ebx , ecx = trash
 
 	// HERE PUT IN THE ACTUAL COMPILED CODE
 
