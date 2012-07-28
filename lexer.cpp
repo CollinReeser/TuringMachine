@@ -60,7 +60,9 @@ std::string getToken( unsigned long long int expects )
 	}
 	if ( expects & ARB_SING )
 	{
-		std::string temp += rawFile.at( pos );
+
+		std::string temp = "";
+		temp += rawFile.at( pos );
 		pos++;
 		return temp;
 	}
@@ -158,7 +160,7 @@ std::string getToken( unsigned long long int expects )
 	if ( 	rawFile.at( pos ) == ' ' || rawFile.at( pos ) == '\n' ||
 			rawFile.at( pos ) == '\t' || rawFile.at( pos ) == '\r' )
 	{
-		return getToken( rawFile , expects );
+		return getToken( expects );
 	}
 	std::string error = "  Error: Reached end of lexer without making a "
 						"decision.";

@@ -5,12 +5,14 @@
 #include <algorithm>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sstream>
+#include <fcntl.h>
 #include "compile.h"
 
-const &std::vector<std::string> getSimilarTokens(
+const std::vector<std::string> getSimilarTokens(
 	const std::vector<std::string> &strings , const std::string &token );
 
-static const &std::string castIntToString( int val )
+static const std::string castIntToString( int val )
 {
 	std::stringstream ss;
 	ss << val;
@@ -41,8 +43,12 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	if ( pid == 0 )
 	{
 		// Child
-		char** args = { "which" , "nasm" , (char*) 0 };
-		execvp( "which" , args )
+		char* args[3] = { "which" , "nasm" , (char*) 0 };
+		// Next three lines steal out and err from which and send to /dev/null
+		int fd = open( "/dev/null" , O_WRONLY );
+		dup2(fd, 1);
+	    dup2(fd, 2);
+		execvp( "which" , args );
 		_exit( arbError );
 	}
 	else
@@ -52,12 +58,12 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		pid_t result = waitpid( pid , &status , 0 );
 		if( WIFEXITED( status ) )
 		{
-			int returnVal = WEXITSTATUS( statval );
+			int returnVal = WEXITSTATUS( status );
 			if ( returnVal == arbError )
 			{
 				if ( verbose )
 				{
-					std::cout << "  Fork-exec to check for NASM failed: "
+					std::cout << "* Fork-exec to check for NASM failed: "
 						"Using gas for assembly." << std::endl;
 				}
 			}
@@ -65,7 +71,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 			{
 				if ( verbose )
 				{
-					std::cout << "  NASM detected: Using NASM for assembly." <<
+					std::cout << "* NASM detected: Using NASM for assembly." <<
 						std::endl;
 				}
 				useNASM = true;
@@ -74,7 +80,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 			{
 				if ( verbose )
 				{
-					std::cout << "  NASM not detected: Using gas for assembly."
+					std::cout << "* NASM not detected: Using gas for assembly."
 						<< std::endl;
 				}
 			}
@@ -83,14 +89,14 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		{
 			if ( verbose )
 			{
-				std::cout << "  Fork-exec to check for NASM terminated "
+				std::cout << "* Fork-exec to check for NASM terminated "
 					"abnormally: Using gas for assembly." << std::endl;
 			}
 		}
 	}
 	if ( verbose )
 	{
-		std::cout << "Performing sanity check..." << std::endl;
+		std::cout << "* Performing sanity check..." << std::endl;
 	}
 	// Terribly inefficient check to see if state names are repeated, and to
 	// populate a list of the state names to be used after this for something
@@ -101,7 +107,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 			if ( env.states.at(i).getName().compare( 
 				env.states.at(j).getName() ) == 0 )
 			{
-				std::string error = "  Error on compile:\n\tDuplicate state "
+				std::string error = "** Error on compile:\n\tDuplicate state "
 					"names detected at state definitions ";
 				error += castIntToString( i + 1 );
 				error += " and ";
@@ -119,9 +125,9 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		{
 			if ( std::find( stateNames.begin() , stateNames.end() , 
 				env.states.at(i).getTransitions().at(j).nextState ) == 
-				vector.end() )
+				stateNames.end() )
 			{
-				std::string error = "  Error on compile:\n\tUndefined state "
+				std::string error = "** Error on compile:\n\tUndefined state "
 					"referenced in transition definition ";
 				error += castIntToString( j + 1 );
 				error += " of state definition ";
@@ -145,8 +151,8 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	}
 	if ( verbose )
 	{
-		std::cout << "Sanity check passed." << std::endl;
-		std::cout << "Beginning compilation stage..." << std::endl;
+		std::cout << "* Sanity check passed." << std::endl;
+		std::cout << "* Beginning compilation stage..." << std::endl;
 	}
 	// gas-only, force using intel syntax
 	if ( !useNASM )
@@ -261,14 +267,39 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 
 	// HERE PUT IN THE ACTUAL COMPILED CODE
 
+	if ( verbose )
+	{
+		std::cout << "* Compilation stage completed." << std::endl;
+		std::cout << "* Beginning assembly stage..." << std::endl;
+	}
+
 	// HERE ASSEMBLE THE CODE
 
+	if ( verbose )
+	{
+		std::cout << "* Assembly stage completed." << std::endl;
+		std::cout << "* Beginning linking stage..." << std::endl;
+	}
+
 	// HERE LINK THE CODE AND PRODUCE AN EXECUTABLE
+
+	if ( verbose )
+	{
+		std::cout << "* Linking stage completed, produced executable:\n  ";
+		if ( execOut.size() > 0 )
+		{
+			std::cout << execOut << std::endl;
+		}
+		else
+		{
+			std::cout << "turing_exec.out" << std::endl;
+		}
+	}
 
 	return;
 }
 
-const &std::vector<std::string> getSimilarTokens(
+const std::vector<std::string> getSimilarTokens(
 	const std::vector<std::string> &strings , const std::string &token )
 {
 	std::vector<std::string> simStrings;

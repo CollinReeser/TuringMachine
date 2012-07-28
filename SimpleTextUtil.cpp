@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <sstream>
 #include "SimpleTextUtil.h"
 
 std::vector<std::string> fileToLines( std::string fileName )

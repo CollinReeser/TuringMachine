@@ -17,7 +17,7 @@ class State
 {
 public:
 	std::string getName() const;
-	const &std::vector<Transitions> getTransitions() const;
+	const std::vector<Transition>& getTransitions() const;
 	void setName( std::string name );
 	void addTransition( Transition transition );
 private:
@@ -35,6 +35,6 @@ struct TuringEnv
 
 };
 
-const &TuringEnv parse( std::string rawInput , bool verbose );
+TuringEnv parse( std::string rawInput , bool verbose );
 
 #endif

@@ -19,19 +19,19 @@ int main( int argc , char** argv )
 	if ( firstArg.compare( "--help" ) == 0 )
 	{
 		std::cout << "Flags:\n" <<
-			"\t-o [filename] <output>:\tCompile the Turing Machine source " <<
-				"code in file [filename], optionally dictating the name of " <<
-				"the output executable in <output>.\n" <<
-			"\t-a [filename] <output>:\tCompile the Turing Machine source " <<
-				"code in file [filename] to the assembly file optionally " <<
-				"dictated by <output>, but do not link.\n" <<
-			"\t-p [filename]:\tVerbosely parse the Turing Machine source " <<
-				"code in file [filename], but do not compile.\n" <<
-			"\t-c [filename] <output> <output_2>:\tVerbosely parse and " <<
-				"compile the Turing Machine source code in file [filename], " <<
-				"output the generated asm into optional file <output>, and " <<
-				"optionally dictate the name of the output executable in " <<
-				"<output_2>.\n" <<
+			"\t-o [filename] <output>: Compile the Turing Machine source " <<
+				"code in file\n\t\t[filename], optionally dictating the name of " <<
+				"the output\n\t\texecutable in <output>.\n\n" <<
+			"\t-a [filename] <output>: Compile the Turing Machine source " <<
+				"code in file\n\t\t[filename] to the assembly file optionally " <<
+				"dictated by\n\t\t<output>, but do not link.\n\n" <<
+			"\t-p [filename]: Verbosely parse the Turing Machine source " <<
+				"code in file\n\t\t[filename], but do not compile.\n\n" <<
+			"\t-c [filename] <output> <output_2>: Verbosely parse and " <<
+				"compile the\n\t\tTuring Machine source code in file [filename], " <<
+				"output the\n\t\tgenerated asm into optional file <output>, and " <<
+				"optionally\n\t\tdictate the name of the output executable in " <<
+				"<output_2>.\n\n" <<
 			"\t--help:\tThis help text." << std::endl;
 		return 0;
 	}
@@ -51,7 +51,7 @@ int main( int argc , char** argv )
 		return 0;
 	}
 	std::string secondArg( argv[2] );
-	const TuringEnv &env;
+	TuringEnv env;
 	if ( firstArg.compare( "-o" ) == 0 || firstArg.compare( "-p" ) == 0 || 
 		firstArg.compare( "-a" ) == 0 || firstArg.compare( "-c" ) == 0 )
 	{
@@ -69,8 +69,9 @@ int main( int argc , char** argv )
 			std::cout << msg << std::endl;
 			return 0;
 		}
-		std::cout << "Parsing completed successfully on well-formed file " <<
-			secondArg << "." << std::endl;
+		// Put verbosity check here
+		std::cout << "* Note: Parsing completed successfully on well-formed " <<
+			"file:\n  " << secondArg << "." << std::endl;
 		if ( firstArg.compare( "-p" ) == 0 )
 		{
 			return 0;
@@ -87,12 +88,12 @@ int main( int argc , char** argv )
 	std::string nullString;
 	if ( argc == 4 )
 	{
-		outfileOne = argc[3];
+		outfileOne = argv[3];
 	}
 	else if ( argc >= 5 )
 	{
-		outfileOne = argc[3];
-		outfileTwo = argc[4];
+		outfileOne = argv[3];
+		outfileTwo = argv[4];
 	}
 	if ( firstArg.compare( "-c" ) == 0 )
 	{

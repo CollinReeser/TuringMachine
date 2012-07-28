@@ -32,6 +32,6 @@ void stripLineComments( std::vector<std::string> &fileLines );
 // robust, so might as well make it as simple as possible. This function
 // generates a single string that is just the whitespace-delimited
 // concatenation of all the strings in the vector
-std::string collapseVectorToString( std::vector<std::string> lines )
+std::string collapseVectorToString( std::vector<std::string> lines );
 
 #endif

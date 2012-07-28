@@ -4,22 +4,22 @@
 #include "parser.h"
 #include "lexer.h"
 
-std::vector<State> parse( std::string rawInput , bool verbose )
+TuringEnv parse( std::string rawInput , bool verbose )
 {
-	std::vector<State> states;
+	TuringEnv env;
 	initInput( rawInput );
 
 
 
-	return states;
+	return env;
 }
 
-std::string State::getName()
+std::string State::getName() const
 {
 	return State::name;
 }
 
-std::vector<Transition> State::getTransitions()
+const std::vector<Transition>& State::getTransitions() const
 {
 	return State::transitions;
 }
