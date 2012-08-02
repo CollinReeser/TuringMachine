@@ -30,10 +30,20 @@ TuringEnv parse( std::string rawInput , bool verbose )
 
 	std::cout << rawInput << std::endl;
 
-	// pos comes from lexer.h and this is getting increasingly hackish. I should
-	// have wrapped the lexer into a class. Oh well
-	while ( pos < rawInput.size() )
+	while ( getPos() < rawInput.size() )
 	{
+		while (	( rawInput.at( getPos() ) == ' ' || 
+			rawInput.at( getPos() ) == '\n' ||
+			rawInput.at( getPos() ) == '\t' || 
+			rawInput.at( getPos() ) == '\r' ) &&
+			getPos() < rawInput.size() - 1 )
+		{
+			getPos()++;
+		}
+		if ( getPos() == rawInput.size() - 1 )
+		{
+			break;
+		}
 		expects = OCTO | STATE | IF_B;
 		token = getToken( expects );
 		std::cout << "New Token: [" << token << "]" << std::endl;
@@ -142,16 +152,107 @@ TuringEnv parse( std::string rawInput , bool verbose )
 			// Get whether complex if or simple
 			expects = L_BRACE | PIPE;
 			token = getToken( expects );
+			std::cout << "New Token: [" << token << "]" << std::endl;
+			expects = 0;
 			if ( token.compare( "{" ) == 0 )
 			{
-
+				expects = R_BRACE | ARB_MULT;
+				token = getToken( expects );
+				std::cout << "New Token: [" << token << "]" << std::endl;
+				expects = 0;
+				if ( token.compare( "}" ) != 0 )
+				{
+					transition.nextState = token;
+					expects = R_BRACE;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << 
+						std::endl;
+					expects = 0;
+				}
+				else
+				{
+					transition.nextState = env.states.at( 
+						currentState ).getName();
+				}
+				env.states.at( currentState ).addTransition( transition );
 			}
 			else if ( token.compare( "|" ) == 0 )
 			{
-				
+				std::vector<Transition> mult_transitions;
+				mult_transitions.push_back( transition );
+				do
+				{
+					// Get read symbol
+					Transition tempTransition;
+					expects = ARB_SING;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+					tempTransition.readSym = token.at(0);
+					// Consume arrow
+					expects = ARROW;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+					// get write symbol
+					expects = ARB_SING;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+					tempTransition.writeSym = token.at(0);
+					// Consume comma
+					expects = COMMA;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+					// get direction to move
+					expects = ARB_SING;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+					tempTransition.direction = token.at(0);
+					// Add to list of transitions
+					mult_transitions.push_back( tempTransition );
+					// Get whether complex if or simple
+					expects = L_BRACE | PIPE;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+				} while ( token.compare( "|" ) == 0 );
+				// Here we have a left brace, so carry on from there
+				expects = R_BRACE | ARB_MULT;
+				token = getToken( expects );
+				std::cout << "New Token: [" << token << "]" << std::endl;
+				expects = 0;
+				if ( token.compare( "}" ) != 0 )
+				{
+					for ( int i = 0; i < mult_transitions.size(); i++ )
+					{
+						mult_transitions.at(i).nextState = token;
+					}
+					expects = R_BRACE;
+					token = getToken( expects );
+					std::cout << "New Token: [" << token << "]" << std::endl;
+					expects = 0;
+				}
+				else
+				{
+					for ( int i = 0; i < mult_transitions.size(); i++ )
+					{
+						mult_transitions.at(i).nextState = env.states.at( 
+							currentState ).getName();
+					}
+				}
+				for ( int i = 0; i < mult_transitions.size(); i++ )
+				{
+					env.states.at( currentState ).addTransition( 
+						mult_transitions.at(i) );
+				}
 			}
 		}
 	}
+	std::cout << "* Lex-Parse: Input exhausted, parsing completed." <<
+		std::endl;
 	return env;
 }
 

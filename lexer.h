@@ -23,14 +23,12 @@
 #define SPEED		32768
 #define CELLS		65536
 
-static std::string rawFile;
-
-static int pos = 0;
-
 void initInput( std::string rawFile );
 
 std::string getToken( unsigned long long int expects );
 
 std::string tokenRequestList( unsigned long long int expects );
+
+int& getPos();
 
 #endif

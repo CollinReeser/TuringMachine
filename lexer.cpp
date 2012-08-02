@@ -3,6 +3,14 @@
 #include "lexer.h"
 #include "string"
 
+static std::string rawFile;
+static int pos = 0;
+
+int& getPos()
+{
+	return pos;
+}
+
 void initInput( std::string rawFileInit )
 {
 	rawFile = rawFileInit;
@@ -11,12 +19,11 @@ void initInput( std::string rawFileInit )
 
 std::string getToken( unsigned long long int expects )
 {
-	std::cout << "Pos: " << pos << std::endl;
 	if ( pos >= rawFile.size() )
 	{
 		std::string error = "  Error on lex with token request list:\n";
 		error += tokenRequestList( expects );
-		error += "No more input.";
+		error += "  No more input.";
 		throw error;
 	}
 	if ( expects & OCTO )
@@ -148,7 +155,7 @@ std::string getToken( unsigned long long int expects )
 	{
 		while (	( rawFile.at( pos ) == ' ' || rawFile.at( pos ) == '\n' ||
 			rawFile.at( pos ) == '\t' || rawFile.at( pos ) == '\r' ) &&
-			pos < rawFile.size() )
+			pos < rawFile.size() - 1 )
 		{
 			pos++;
 		}
@@ -162,7 +169,7 @@ std::string getToken( unsigned long long int expects )
 		std::string temp = "";
 		while (	( rawFile.at( pos ) == ' ' || rawFile.at( pos ) == '\n' ||
 			rawFile.at( pos ) == '\t' || rawFile.at( pos ) == '\r' ) &&
-			pos < rawFile.size() )
+			pos < rawFile.size() - 1 )
 		{
 			pos++;
 		}
@@ -181,10 +188,14 @@ std::string getToken( unsigned long long int expects )
 	bool whitespaceHit = false;
 	while (	( rawFile.at( pos ) == ' ' || rawFile.at( pos ) == '\n' ||
 			rawFile.at( pos ) == '\t' || rawFile.at( pos ) == '\r' ) &&
-			pos < rawFile.size() )
+			pos < rawFile.size() - 1 )
 	{
 		whitespaceHit = true;
 		pos++;
+	}
+	if ( pos == rawFile.size() - 1 )
+	{
+		pos = rawFile.size();
 	}
 	if ( whitespaceHit )
 	{
@@ -192,10 +203,11 @@ std::string getToken( unsigned long long int expects )
 	}
 	std::string error = "  Error on lex with token request list:\n";
 	error += tokenRequestList( expects );
-	error += "Requested token(s) not found.";
+	error += "  Requested token(s) not found.";
 	throw error;
 }
 
+/*
 bool peekToken( unsigned long long int expects )
 {
 	if ( pos >= rawFile.size() )
@@ -330,6 +342,7 @@ bool peekToken( unsigned long long int expects )
 	}
 	return peekToken( expects );
 }
+*/
 
 std::string tokenRequestList( unsigned long long int expects )
 {
