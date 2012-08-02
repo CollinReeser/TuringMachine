@@ -25,6 +25,8 @@
 
 static std::string rawFile;
 
+static int pos = 0;
+
 void initInput( std::string rawFile );
 
 std::string getToken( unsigned long long int expects );
