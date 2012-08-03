@@ -36,4 +36,6 @@ struct TuringEnv
 
 TuringEnv parse( std::string rawInput , bool verbose );
 
+void printTuringEnv( const TuringEnv &env );
+
 #endif

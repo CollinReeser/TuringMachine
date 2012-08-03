@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -8,6 +9,7 @@
 #include <sstream>
 #include <fcntl.h>
 #include "compile.h"
+#include "parser.h"
 
 const std::vector<std::string> getSimilarTokens(
 	const std::vector<std::string> &strings , const std::string &token );
@@ -36,6 +38,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	std::vector<std::string> stateNames;
 	std::string assemblyCode;
 	int lengthOfTape;
+	std::ofstream ofs;
 	// Detecting whether NASM is installed. I like NASM more than gas, therefore
 	// I will try to use NASM unless it is not installed. The assumption is that
 	// at least gas is installed
@@ -123,7 +126,9 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	{
 		for ( int j = 0; j < env.states.at(i).getTransitions().size(); j++ )
 		{
-			if ( std::find( stateNames.begin() , stateNames.end() , 
+			if ( env.states.at(i).getTransitions().at(j).nextState.compare(
+				"accept" ) != 0 && 
+				std::find( stateNames.begin() , stateNames.end() , 
 				env.states.at(i).getTransitions().at(j).nextState ) == 
 				stateNames.end() )
 			{
@@ -138,11 +143,10 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 					env.states.at(i).getTransitions().at(j).nextState );
 				if ( posToks.size() > 0 )
 				{
-					error += "State names similar to token: ";
+					error += "\n\tState names similar to token: ";
 					for ( int k = 0; k < posToks.size(); k++ )
 					{
 						error += posToks.at(k);
-						error += "\n";
 					}
 				}
 				throw error;
@@ -225,7 +229,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		}
 		lengthOfTape = 5000;
 		assemblyCode += "\t\tpush\t5000\n";
-		assemblyCode += "\t\tcall\t\tmalloc\n";
+		assemblyCode += "\t\tcall\tmalloc\n";
 	}
 	else
 	{
@@ -240,7 +244,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		assemblyCode += "\t\tpush\t";
 		assemblyCode += castIntToString( env.cells );
 		assemblyCode += "\n";
-		assemblyCode += "\t\tcall\t\tmalloc\n";
+		assemblyCode += "\t\tcall\tmalloc\n";
 	}
 	// Pop malloc arg off stack
 	assemblyCode += "\t\tpop\t\tedx\n";
@@ -262,6 +266,8 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	// Initialize the tape
 	assemblyCode += "\t\trep\t\tstosb\n";
 
+	printTuringEnv( env );
+
 	// edx = pointer to tape
 	// eax , ebx , ecx = trash
 
@@ -272,6 +278,24 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		std::cout << "* Compilation stage completed." << std::endl;
 		std::cout << "* Beginning assembly stage..." << std::endl;
 	}
+	if ( verbose == link )
+	{
+		if ( verbose )
+		{
+			ofs.open( ( ( execOut.size() > 0 ) ? asmOut.c_str() : 
+				"turing_asm.out" ) , std::fstream::out );
+		}
+		else
+		{
+			ofs.open( asmOut.c_str() , std::fstream::out );
+		}
+	}
+	else
+	{
+		ofs.open( "turing_asm.out" , std::fstream::out );
+	}
+	// Write out the assembly code to a file
+	ofs << assemblyCode << std::endl;
 
 	// HERE ASSEMBLE THE CODE
 

@@ -31,7 +31,8 @@ int main( int argc , char** argv )
 				"compile the\n\t\tTuring Machine source code in file [filename], " <<
 				"output the\n\t\tgenerated asm into optional file <output>, and " <<
 				"optionally\n\t\tdictate the name of the output executable in " <<
-				"<output_2>.\n\n" <<
+				"<output_2>.\n\t\tIf only one argument is given, assume as " <<
+				"name of executable.\n\n" <<
 			"\t--help:\tThis help text." << std::endl;
 		return 0;
 	}

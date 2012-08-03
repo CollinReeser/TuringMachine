@@ -19,6 +19,21 @@ if B -> b,R
 	five
 }
 
+if # -> # , R
+{
+	cycle
+}
+
+state cycle
+if a -> a,R |
+	b->b , R
+{}
+
+if _ -> _ , S
+{
+	accept
+}
+
 state one
 if A->A,R |
 	B->B,R
@@ -27,4 +42,76 @@ if A->A,R |
 if # -> # , R
 {
 	two
+}
+
+state two
+if a -> a , R |
+	b->b , R
+{}
+
+if A -> a, L
+{
+	three
+}
+
+state three
+if a ->a , L|
+	b->b,L
+{}
+
+if # -> # , L
+{
+	four
+}
+
+state four 
+if A -> A , L |
+	B -> B , L
+{}
+
+if a->a,R |
+	b -> b, R
+{
+	start
+}
+
+state five
+if A -> A , R |
+	B -> B , R
+{}
+
+if # -> # , R
+{
+	six
+}
+
+state six
+if a -> a , R |
+	b -> b , R
+{}
+
+if B -> b , L
+{
+	seven
+}
+
+state seven
+if a -> a , L |
+	b -> b , L
+{}
+
+if # -> # , L
+{
+	eight
+}
+
+state eight
+if A -> A , L |
+	B -> B , L
+{}
+
+if a -> a , R |
+	b -> b , R
+{
+	start
 }

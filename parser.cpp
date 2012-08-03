@@ -30,6 +30,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 
 	std::cout << rawInput << std::endl;
 
+	env.cells = 0;
+	env.speed = 0;
+	env.empty = '_';
+	env.start = std::string( "start" );
 	while ( getPos() < rawInput.size() )
 	{
 		while (	( rawInput.at( getPos() ) == ' ' || 
@@ -254,6 +258,35 @@ TuringEnv parse( std::string rawInput , bool verbose )
 	std::cout << "* Lex-Parse: Input exhausted, parsing completed." <<
 		std::endl;
 	return env;
+}
+
+void printTuringEnv( const TuringEnv &env )
+{
+	std::cout << "Printing Turing Environment Information:\n" << std::endl;
+	std::cout << "Number of cells: " << env.cells << std::endl;
+	std::cout << "Speed of tape:   " << env.speed << std::endl;
+	std::cout << "Empty symbol:    " << env.empty << std::endl;
+	std::cout << "Start state:     " << env.start << std::endl;
+	std::cout << "\nStates:" << std::endl;
+	for ( int i = 0; i < env.states.size(); i++ )
+	{
+		std::cout << " State name: " << env.states.at(i).getName() << 
+			std::endl;
+		std::cout << " Transitions:" << std::endl;
+		std::vector<Transition> transitions = env.states.at(i).getTransitions();
+		for ( int j = 0; j < transitions.size(); j++ )
+		{
+			std::cout << "  Read:      " << transitions.at(j).readSym << 
+				std::endl;
+			std::cout << "  Write:     " << transitions.at(j).writeSym << 
+				std::endl;
+			std::cout << "  Direction: " << transitions.at(j).direction << 
+				std::endl;
+			std::cout << "  To State:  " << transitions.at(j).nextState << 
+				std::endl;
+			std::cout << std::endl;
+		}
+	}
 }
 
 std::string State::getName() const
