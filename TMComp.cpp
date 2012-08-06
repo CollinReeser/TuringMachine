@@ -71,8 +71,11 @@ int main( int argc , char** argv )
 			return 0;
 		}
 		// Put verbosity check here
-		std::cout << "* Note: Parsing completed successfully on well-formed " <<
-			"file:\n  " << secondArg << "." << std::endl;
+		if ( firstArg.compare( "-c" ) == 0 || firstArg.compare( "-p" ) == 0 )
+		{
+			std::cout << "* Note: Parsing completed successfully on " <<
+				"well-formed file:\n  " << secondArg << "." << std::endl;
+		}
 		if ( firstArg.compare( "-p" ) == 0 )
 		{
 			return 0;

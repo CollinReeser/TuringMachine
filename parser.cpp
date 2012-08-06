@@ -27,9 +27,6 @@ TuringEnv parse( std::string rawInput , bool verbose )
 	bool gotStart = false;
 	bool gotCells = false;
 	unsigned long long int expects = 0;
-
-	std::cout << rawInput << std::endl;
-
 	env.cells = 0;
 	env.speed = 0;
 	env.empty = '_';
@@ -50,7 +47,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 		}
 		expects = OCTO | STATE | IF_B;
 		token = getToken( expects );
-		std::cout << "New Token: [" << token << "]" << std::endl;
+		if ( verbose )
+		{
+			std::cout << "New Token: [" << token << "]" << std::endl;
+		}
 		expects = 0;
 		// Grab directives
 		if ( token.compare( "#" ) == 0 )
@@ -72,14 +72,20 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				expects |= CELLS;
 			}
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			if ( token.compare( "speed" ) == 0 )
 			{
 				gotSpeed = true;
 				expects = ARB_MULT;
 				token = getToken( expects );
-				std::cout << "New Token: [" << token << "]" << std::endl;
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << std::endl;
+				}
 				expects = 0;
 				env.speed = castStringToInt( token );
 			}
@@ -88,7 +94,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				gotEmpty = true;
 				expects = ARB_SING;
 				token = getToken( expects );
-				std::cout << "New Token: [" << token << "]" << std::endl;
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << std::endl;
+				}
 				expects = 0;
 				env.empty = token.at(0);
 			}
@@ -97,7 +106,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				gotStart = true;
 				expects = ARB_MULT;
 				token = getToken( expects );
-				std::cout << "New Token: [" << token << "]" << std::endl;
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << std::endl;
+				}
 				expects = 0;
 				env.start = token;
 			}
@@ -106,7 +118,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				gotCells = true;
 				expects = ARB_MULT;
 				token = getToken( expects );
-				std::cout << "New Token: [" << token << "]" << std::endl;
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << std::endl;
+				}
 				expects = 0;
 				env.cells = castStringToInt( token );
 			}
@@ -115,7 +130,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 		{
 			expects = ARB_MULT;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			State state;
 			state.setName( token );
@@ -128,49 +146,73 @@ TuringEnv parse( std::string rawInput , bool verbose )
 			Transition transition;
 			expects = ARB_SING;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			transition.readSym = token.at(0);
 			// Consume arrow
 			expects = ARROW;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			// get write symbol
 			expects = ARB_SING;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			transition.writeSym = token.at(0);
 			// Consume comma
 			expects = COMMA;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			// get direction to move
 			expects = ARB_SING;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			transition.direction = token.at(0);
 			// Get whether complex if or simple
 			expects = L_BRACE | PIPE;
 			token = getToken( expects );
-			std::cout << "New Token: [" << token << "]" << std::endl;
+			if ( verbose )
+			{
+				std::cout << "New Token: [" << token << "]" << std::endl;
+			}
 			expects = 0;
 			if ( token.compare( "{" ) == 0 )
 			{
 				expects = R_BRACE | ARB_MULT;
 				token = getToken( expects );
-				std::cout << "New Token: [" << token << "]" << std::endl;
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << std::endl;
+				}
 				expects = 0;
 				if ( token.compare( "}" ) != 0 )
 				{
 					transition.nextState = token;
 					expects = R_BRACE;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << 
-						std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 				}
 				else
@@ -190,29 +232,49 @@ TuringEnv parse( std::string rawInput , bool verbose )
 					Transition tempTransition;
 					expects = ARB_SING;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 					tempTransition.readSym = token.at(0);
 					// Consume arrow
 					expects = ARROW;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 					// get write symbol
 					expects = ARB_SING;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 					tempTransition.writeSym = token.at(0);
 					// Consume comma
 					expects = COMMA;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 					// get direction to move
 					expects = ARB_SING;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 					tempTransition.direction = token.at(0);
 					// Add to list of transitions
@@ -220,13 +282,21 @@ TuringEnv parse( std::string rawInput , bool verbose )
 					// Get whether complex if or simple
 					expects = L_BRACE | PIPE;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 				} while ( token.compare( "|" ) == 0 );
 				// Here we have a left brace, so carry on from there
 				expects = R_BRACE | ARB_MULT;
 				token = getToken( expects );
-				std::cout << "New Token: [" << token << "]" << std::endl;
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << 
+						std::endl;
+				}
 				expects = 0;
 				if ( token.compare( "}" ) != 0 )
 				{
@@ -236,7 +306,11 @@ TuringEnv parse( std::string rawInput , bool verbose )
 					}
 					expects = R_BRACE;
 					token = getToken( expects );
-					std::cout << "New Token: [" << token << "]" << std::endl;
+					if ( verbose )
+					{
+						std::cout << "New Token: [" << token << "]" << 
+							std::endl;
+					}
 					expects = 0;
 				}
 				else
@@ -255,16 +329,20 @@ TuringEnv parse( std::string rawInput , bool verbose )
 			}
 		}
 	}
-	std::cout << "* Lex-Parse: Input exhausted, parsing completed." <<
-		std::endl;
+	if ( verbose )
+	{
+		std::cout << "* Lex-Parse: Input exhausted, parsing completed." <<
+			std::endl;
+	}
 	return env;
 }
 
 void printTuringEnv( const TuringEnv &env )
 {
 	std::cout << "Printing Turing Environment Information:\n" << std::endl;
-	std::cout << "Number of cells: " << env.cells << std::endl;
-	std::cout << "Speed of tape:   " << env.speed << std::endl;
+	std::cout << "Number of cells: " << env.cells << 
+		" (if 0, 5000 will be used)" << std::endl;
+	std::cout << "Speed of tape:   " << env.speed << " (seconds)" << std::endl;
 	std::cout << "Empty symbol:    " << env.empty << std::endl;
 	std::cout << "Start state:     " << env.start << std::endl;
 	std::cout << "\nStates:" << std::endl;
