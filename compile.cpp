@@ -182,6 +182,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	else
 	{
 		assemblyCode += "\t\t.section\t.data\n\n";
+		assemblyCode += "str_ctrl:\t\t.asciz\t\t\"Goodbye, world!\\n\"\n";
 	}
 
 	// PUT ANY .data SECTION ELEMENTS HERE
@@ -218,7 +219,15 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	assemblyCode += "main:\n";
 
 	// Set up stack frame
-	assemblyCode += "\t\tpush\tebp\n";
+	if ( useNASM )
+	{
+		assemblyCode += "\t\tpush\tebp\n";
+	}
+	else
+	{
+		assemblyCode += "\t\tadd\t\tesp , -4\n";
+		assemblyCode += "\t\tmov\t\t[esp] , ebp\n";
+	}
 	assemblyCode += "\t\tmov\t\tebp , esp\n";
 
 	// Here allocate memory for the tape
@@ -232,7 +241,16 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 				"cells." << std::endl;
 		}
 		lengthOfTape = 5000;
-		assemblyCode += "\t\tpush\t5000\n";
+		if ( useNASM )
+		{
+			assemblyCode += "\t\tpush\t5000\n";
+		}
+		else
+		{
+			assemblyCode += "\t\tadd\t\tesp , -4\n";
+			assemblyCode += "\t\tmov\t\teax , 5000\n";
+			assemblyCode += "\t\tmov\t\t[esp] , eax\n";
+		}
 		assemblyCode += "\t\tcall\tmalloc\n";
 	}
 	else
@@ -245,13 +263,32 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 				"simulator." << std::endl;
 		}
 		lengthOfTape = env.cells;
-		assemblyCode += "\t\tpush\t";
-		assemblyCode += castIntToString( env.cells );
-		assemblyCode += "\n";
+		if ( useNASM )
+		{
+			assemblyCode += "\t\tpush\t";
+			assemblyCode += castIntToString( env.cells );
+			assemblyCode += "\n";
+		}
+		else
+		{
+			assemblyCode += "\t\tadd\t\tesp , -4\n";
+			assemblyCode += "\t\tmov\t\teax , ";
+			assemblyCode += castIntToString( env.cells );
+			assemblyCode += "\n";
+			assemblyCode += "\t\tmov\t\t[esp] , eax\n";
+		}
 		assemblyCode += "\t\tcall\tmalloc\n";
 	}
 	// Pop malloc arg off stack
-	assemblyCode += "\t\tpop\t\tedx\n";
+	if ( useNASM )
+	{
+		assemblyCode += "\t\tpop\t\tedx\n";
+	}
+	else
+	{
+		assemblyCode += "\t\tmov\t\tedx , [esp]\n";
+		assemblyCode += "\t\tadd\t\tesp , 4\n";
+	}
 
 	// Move array pointer into edi for rep, and into edx for storing the pointer
 	assemblyCode += "\t\tmov\t\tedx , eax\n";
@@ -307,19 +344,56 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 
 	assemblyCode += "\n";
 	// Preserve edx for this call
-	assemblyCode += "\t\tpush\tedx\n";
-	// Sanity check with printf output
-	assemblyCode += "\t\tpush\tdword str_ctrl\n";
+
+	if ( useNASM )
+	{
+		assemblyCode += "\t\tpush\tedx\n";
+		// Sanity check with printf output
+		assemblyCode += "\t\tpush\tdword str_ctrl\n";
+	}
+	else
+	{
+		assemblyCode += "\t\tadd\t\tesp , -4\n";
+		assemblyCode += "\t\tmov\t\t[esp] , edx\n";
+		assemblyCode += "\t\tadd\t\tesp , -4\n";
+		assemblyCode += "\t\tmov\t\teax , str_ctrl\n";
+		assemblyCode += "\t\tmov\t\t[esp] , eax\n";
+	}
 	assemblyCode += "\t\tcall\tprintf\n";
 	// Get edx back
 	assemblyCode += "\t\tadd\t\tesp , 4\n";
-	assemblyCode += "\t\tpop\t\tedx\n";
+	if ( useNASM )
+	{
+		assemblyCode += "\t\tpop\t\tedx\n";
+	}
+	else
+	{
+		assemblyCode += "\t\tmov\t\tedx , [esp]\n";
+		assemblyCode += "\t\tadd\t\tesp , 4\n";
+	}
+
 	// Free edx (tape pointer)
-	assemblyCode += "\t\tpush\tedx\n";
+	if ( useNASM )
+	{
+		assemblyCode += "\t\tpush\tedx\n";
+	}
+	else
+	{
+		assemblyCode += "\t\tadd\t\tesp , -4\n";
+		assemblyCode += "\t\tmov\t\t[esp] , edx\n";
+	}
 	assemblyCode += "\t\tcall\tfree\n";
 	// Take down stack frame
 	assemblyCode += "\t\tmov\t\tesp , ebp\n";
-	assemblyCode += "\t\tpop\t\tebp\n";
+	if ( useNASM )
+	{
+		assemblyCode += "\t\tpop\t\tebp\n";
+	}
+	else
+	{
+		assemblyCode += "\t\tmov\t\tebp , [esp]\n";
+		assemblyCode += "\t\tadd\t\tesp , 4\n";
+	}
 	// Return 0 to OS
 	assemblyCode += "\t\tmov\t\teax , 0\n";
 	assemblyCode += "\t\tret\n";
@@ -369,8 +443,8 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	    //dup2(fd, 2);
 	    if ( !useNASM )
 	    {
-			execlp( "as" , "as" , "-o" , "turing_obj.o" , asmFilename.c_str() ,
-				(char*)0 );
+			execlp( "as" , "as" , "--32" , "-o" , "turing_obj.o" , 
+				asmFilename.c_str() , (char*)0 );
 		}
 		else
 		{
