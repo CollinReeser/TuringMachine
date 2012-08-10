@@ -30,7 +30,7 @@ TuringEnv parse( std::string rawInput , bool verbose )
 	unsigned long long int expects = 0;
 	env.cells = 0;
 	env.speed = 0;
-	env.steps = 10000;
+	env.steps = 1000;
 	env.empty = '_';
 	env.start = std::string( "start" );
 	while ( getPos() < rawInput.size() )

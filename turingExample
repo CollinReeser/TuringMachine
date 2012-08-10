@@ -1,5 +1,5 @@
-// This implements B = { w#w | w element-of { 0 , 1 }* }
-// INCOMPLETE
+// This implements L = { w#w | w element-of { A , B }* }
+
 
 
 #empty _

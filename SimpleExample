@@ -1,0 +1,23 @@
+/*
+	Implements the regular expression:
+					A*B
+*/
+
+#start start_state
+#empty _
+#cells 500
+
+state start_state
+	if A -> A , R
+	{}
+
+	if B -> B , R
+	{
+		check_finish
+	}
+
+state check_finish
+	if _ -> _ , S
+	{
+		accept
+	}
