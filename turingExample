@@ -8,6 +8,10 @@
 
 #speed 1
 
+#steps 15000
+
+#cells 500
+
 state start
 if A -> a,R
 {

@@ -66,6 +66,14 @@ std::string getToken( unsigned long long int expects )
 			return "speed";
 		}
 	}
+	if ( expects & STEPS )
+	{
+		if ( rawFile.substr( pos , 5 ).compare( "steps" ) == 0 )
+		{
+			pos += 5;
+			return "steps";
+		}
+	}
 	if ( expects & STATE )
 	{
 		if ( rawFile.substr( pos , 5 ).compare( "state" ) == 0 )
@@ -374,8 +382,7 @@ std::string tokenRequestList( unsigned long long int expects )
 	if ( expects & CELLS )
 	{
 		expectString += "\tKeyword: cells\n\t\tUsed to denote the number of "
-						"tape cells that are available for use in addition "
-						"to and to the right of the input cells.\n";
+						"tape cells that are available for use.\n";
 	}
 	if ( expects & ARB_SING )
 	{

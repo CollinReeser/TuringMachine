@@ -32,6 +32,7 @@ struct TuringEnv
 	char empty;
 	std::string start;
 	int cells;
+	int steps;
 };
 
 TuringEnv parse( std::string rawInput , bool verbose );

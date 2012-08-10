@@ -22,6 +22,7 @@
 #define R_BRACE		16384
 #define SPEED		32768
 #define CELLS		65536
+#define STEPS		131072
 
 void initInput( std::string rawFile );
 

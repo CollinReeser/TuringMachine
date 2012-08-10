@@ -26,9 +26,11 @@ TuringEnv parse( std::string rawInput , bool verbose )
 	bool gotEmpty = false;
 	bool gotStart = false;
 	bool gotCells = false;
+	bool gotSteps = false;
 	unsigned long long int expects = 0;
 	env.cells = 0;
 	env.speed = 0;
+	env.steps = 10000;
 	env.empty = '_';
 	env.start = std::string( "start" );
 	while ( getPos() < rawInput.size() )
@@ -70,6 +72,10 @@ TuringEnv parse( std::string rawInput , bool verbose )
 			if ( !gotCells )
 			{
 				expects |= CELLS;
+			}
+			if ( !gotSteps )
+			{
+				expects |= STEPS;
 			}
 			token = getToken( expects );
 			if ( verbose )
@@ -124,6 +130,18 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				}
 				expects = 0;
 				env.cells = castStringToInt( token );
+			}
+			if ( token.compare( "steps" ) == 0 )
+			{
+				gotSteps = true;
+				expects = ARB_MULT;
+				token = getToken( expects );
+				if ( verbose )
+				{
+					std::cout << "New Token: [" << token << "]" << std::endl;
+				}
+				expects = 0;
+				env.steps = castStringToInt( token );
 			}
 		}
 		else if ( token.compare( "state" ) == 0 )

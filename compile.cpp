@@ -170,7 +170,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	if ( useNASM )
 	{
 		assemblyCode += "\t\textern\tprintf\n";
-		assemblyCode += "\t\textern\tmalloc\n\n";
+		assemblyCode += "\t\textern\tmalloc\n";
 		assemblyCode += "\t\textern\tfree\n\n";
 	}
 	// Here, allocate data we may need
@@ -181,6 +181,26 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 			"\"Tape:\" , 10 , \"%s\" , 10 , 0\n";
 		assemblyCode += "tape_err_str:\tdb\t\t\"Tape of insufficient "
 			"size to accomodate input length. Exiting.\" , 10 , 0\n";
+		assemblyCode += "reject_str:\tdb\t\t10 , "
+			"\"Input REJECTED.\" , 10 , 0\n";
+		assemblyCode += "accept_str:\tdb\t\t10 , "
+			"\"Input ACCEPTED.\" , 10 , 0\n";
+		for ( int i = 0; i < env.states.size(); i++ )
+		{
+			assemblyCode += "config_print_";
+			assemblyCode += env.states.at(i).getName();
+			assemblyCode += ":\tdb\t\t10 , \"Configuration:\" , 10 , "
+				"\"Tape:\" , 10 , \"%s\" , 10 , "
+				"\"Head over cell: %d\" , 10 , "
+				"\"In state: ";
+			assemblyCode += env.states.at(i).getName();
+			assemblyCode += "\" , 10 , 0\n";
+		}
+		assemblyCode += "config_print_accept";
+		assemblyCode += ":\tdb\t\t10 , \"Ending Configuration:\" , 10 , "
+			"\"Tape:\" , 10 , \"%s\" , 10 , "
+			"\"Head over cell: %d\" , 10 , "
+			"\"In state: accept\" , 10 , 0 \n";
 	}
 	else
 	{
@@ -269,7 +289,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 				"unexpected results because of the wrap-around behavior of " <<
 				"simulator." << std::endl;
 		}
-		lengthOfTape = env.cells;
+		lengthOfTape = env.cells + 1;
 		if ( useNASM )
 		{
 			assemblyCode += "\t\tpush\t";
@@ -371,19 +391,140 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	assemblyCode += "no_input:\nloaded_input:\n";
 	// Initialize ecx to be position on tape
 	assemblyCode += "\t\tmov\t\tecx , 0\n";
+	// Initialize edi to be the count for the number of steps the machine takes
+	assemblyCode += "\t\tmov\t\tedi , 0\n";
+	// Go to the first state
+	assemblyCode += "\t\tjmp\t\tstate_";
+	assemblyCode += env.start;
+	assemblyCode += "\n";
 
 	// edx = pointer to tape
 	// ecx = current tape position
 	// esi = 0 if no printing configs, 1 if printing configs
+	// edi = count of the transitions taken so far
 	// eax , ebx = trash
 
 	// HERE PUT IN THE ACTUAL COMPILED CODE
 
+	for ( int i = 0; i < env.states.size(); i++ )
+	{
+		assemblyCode += "\n\n";
+		assemblyCode += "state_";
+		assemblyCode += env.states.at(i).getName();
+		assemblyCode += ":";
+		std::vector<Transition> transitions = env.states.at(i).getTransitions();
+		for ( int j = 0; j < transitions.size(); j++ )
+		{
+			assemblyCode += "\n.state_trans_";
+			assemblyCode += castIntToString( j );
+			assemblyCode += ":\n";
+			assemblyCode += "\t\tmov\t\tbl , [edx + ecx]\n";
+			assemblyCode += "\t\tcmp\t\t bl , \'";
+			assemblyCode += transitions.at(j).readSym;
+			assemblyCode += "\'\n";
+			if ( j < transitions.size() - 1 )
+			{
+				assemblyCode += "\t\tjne\t\t.state_trans_";
+				assemblyCode += castIntToString( j + 1 );
+				assemblyCode += "\n";
+			}
+			else
+			{
+				assemblyCode += "\t\tjne\t\tstate_reject\n";
+			}
+			if ( transitions.at(j).readSym != transitions.at(j).writeSym )
+			{
+				assemblyCode += "\t\tmov\t\tbyte [ edx + ecx ] , \'";
+				assemblyCode += transitions.at(j).writeSym;
+				assemblyCode += "\'\n";
+			}
+			if ( transitions.at(j).direction == 'R' )
+			{
+				assemblyCode += "\t\tinc\t\tecx\n";
+				assemblyCode += "\t\tcmp\t\tecx , ";
+				assemblyCode += castIntToString( lengthOfTape - 1 );
+				assemblyCode += "\n";
+				assemblyCode += "\t\tjne\t\t.state_bounds_high_skip_";
+				assemblyCode += castIntToString( j );
+				assemblyCode += "\n";
+				assemblyCode += "\t\tmov\t\tecx , 0\n";
+			}
+			else if ( transitions.at(j).direction == 'L' )
+			{
+				assemblyCode += "\t\tdec\t\tecx\n";
+				assemblyCode += "\t\tcmp\t\tecx , ";
+				assemblyCode += castIntToString( -1 );
+				assemblyCode += "\n";
+				assemblyCode += "\t\tjne\t\t.state_bounds_low_skip_";
+				assemblyCode += castIntToString( j );
+				assemblyCode += "\n";
+				assemblyCode += "\t\tmov\t\tecx , ";
+				assemblyCode += castIntToString( lengthOfTape - 2 );
+				assemblyCode += "\n";
+			}
+			assemblyCode += "\n.state_bounds_high_skip_";
+			assemblyCode += castIntToString( j );
+			assemblyCode += ":\n";
+			assemblyCode += ".state_bounds_low_skip_";
+			assemblyCode += castIntToString( j );
+			assemblyCode += ":\n";
+//--------- PUT SLEEP IN HERE
+			// Print config info
+			assemblyCode += "\t\tcmp\t\tesi , 0\n";
+			assemblyCode += "\t\tje\t\t.no_config_print_";
+			assemblyCode += castIntToString( j );
+			assemblyCode += "\n";
 
+			assemblyCode += "\t\tpush\teax\n";
+			assemblyCode += "\t\tpush\tecx\n";
+			assemblyCode += "\t\tpush\tedx\n";
 
+			assemblyCode += "\t\tpush\tecx\n";
+			assemblyCode += "\t\tpush\tedx\n";
+			assemblyCode += "\t\tpush\tconfig_print_";
+			assemblyCode += transitions.at(j).nextState;
+			assemblyCode += "\n";
+			assemblyCode += "\t\tcall\tprintf\n";
 
-	assemblyCode += "\n";
+			assemblyCode += "\t\tadd\t\tesp , 12\n";
+			assemblyCode += "\t\tpop\t\tedx\n";
+			assemblyCode += "\t\tpop\t\tecx\n";
+			assemblyCode += "\t\tpop\t\teax\n";
 
+			assemblyCode += "\n.no_config_print_";
+			assemblyCode += castIntToString( j );
+			assemblyCode += ":\n";
+			assemblyCode += "\t\tjmp\t\tstate_";
+			assemblyCode += transitions.at(j).nextState;
+			assemblyCode += "\n";
+		}
+	}
+
+	assemblyCode += "\nstate_reject:\n";
+	assemblyCode += "\t\tpush\teax\n";
+	assemblyCode += "\t\tpush\tecx\n";
+	assemblyCode += "\t\tpush\tedx\n";
+	assemblyCode += "\t\tpush\treject_str\n";
+	assemblyCode += "\t\tcall\tprintf\n";
+	assemblyCode += "\t\tadd\t\tesp , 4\n";
+	assemblyCode += "\t\tpop\t\tedx\n";
+	assemblyCode += "\t\tpop\t\tecx\n";
+	assemblyCode += "\t\tpop\t\teax\n";
+	assemblyCode += "\t\tjmp\t\texit_sim\n";
+
+	assemblyCode += "\nstate_accept:\n";
+	assemblyCode += "\t\tpush\teax\n";
+	assemblyCode += "\t\tpush\tecx\n";
+	assemblyCode += "\t\tpush\tedx\n";
+	assemblyCode += "\t\tpush\taccept_str\n";
+	assemblyCode += "\t\tcall\tprintf\n";
+	assemblyCode += "\t\tadd\t\tesp , 4\n";
+	assemblyCode += "\t\tpop\t\tedx\n";
+	assemblyCode += "\t\tpop\t\tecx\n";
+	assemblyCode += "\t\tpop\t\teax\n";
+
+	assemblyCode += "\nexit_sim:\n";
+	/*
 	if ( useNASM )
 	{
 		// Preserve edx for this call
@@ -413,7 +554,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		assemblyCode += "\t\tmov\t\tedx , [esp]\n";
 		assemblyCode += "\t\tadd\t\tesp , 4\n";
 	}
-
+	*/
 	// Free edx (tape pointer)
 	if ( useNASM )
 	{
