@@ -177,12 +177,17 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	if ( useNASM )
 	{
 		assemblyCode += "\t\tSECTION\t.data\n\n";
-		assemblyCode += "str_ctrl:\t\tdb\t\t\"Goodbye, world!\" , 10 , 0\n";
+		assemblyCode += "str_ctrl:\t\tdb\t\t\"Goodbye, world!\" , 10 , "
+			"\"Tape:\" , 10 , \"%s\" , 10 , 0\n";
+		assemblyCode += "tape_err_str:\tdb\t\t\"Tape of insufficient "
+			"size to accomodate input length. Exiting.\" , 10 , 0\n";
 	}
 	else
 	{
 		assemblyCode += "\t\t.section\t.data\n\n";
 		assemblyCode += "str_ctrl:\t\t.asciz\t\t\"Goodbye, world!\\n\"\n";
+		assemblyCode += "tape_err_str:\t.asciz\t\t\"Tape of insufficient "
+			"size to accomodate input length. Exiting.\n\"";
 	}
 
 	// PUT ANY .data SECTION ELEMENTS HERE
@@ -231,27 +236,29 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	assemblyCode += "\t\tmov\t\tebp , esp\n";
 
 	// Here allocate memory for the tape
-	// We did not ask for any specific amount of cells, so get a default of 5000
+	// We did not ask for any specific amount of cells, so get a default of 1000
 	if ( env.cells <= 0 )
 	{
 		if ( env.cells < 0 )
 		{
 			std::cout << "  Warning: Negative number of cells to allocate " <<
-				"were requested: " << env.cells << ". Defaulting to 5000 " <<
+				"were requested: " << env.cells << ". Defaulting to 1000 " <<
 				"cells." << std::endl;
 		}
-		lengthOfTape = 5000;
+		lengthOfTape = 1000;
 		if ( useNASM )
 		{
-			assemblyCode += "\t\tpush\t5000\n";
+			assemblyCode += "\t\tpush\t1001\n";
 		}
 		else
 		{
 			assemblyCode += "\t\tadd\t\tesp , -4\n";
-			assemblyCode += "\t\tmov\t\teax , 5000\n";
+			assemblyCode += "\t\tmov\t\teax , 1001\n";
 			assemblyCode += "\t\tmov\t\t[esp] , eax\n";
 		}
 		assemblyCode += "\t\tcall\tmalloc\n";
+		// Place null terminator at end of the tape, to make printing easy
+		assemblyCode += "\t\tmov\t\tbyte [eax + 1000] , 0\n";
 	}
 	else
 	{
@@ -266,18 +273,22 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		if ( useNASM )
 		{
 			assemblyCode += "\t\tpush\t";
-			assemblyCode += castIntToString( env.cells );
+			assemblyCode += castIntToString( env.cells + 1 );
 			assemblyCode += "\n";
 		}
 		else
 		{
 			assemblyCode += "\t\tadd\t\tesp , -4\n";
 			assemblyCode += "\t\tmov\t\teax , ";
-			assemblyCode += castIntToString( env.cells );
+			assemblyCode += castIntToString( env.cells + 1 );
 			assemblyCode += "\n";
 			assemblyCode += "\t\tmov\t\t[esp] , eax\n";
 		}
 		assemblyCode += "\t\tcall\tmalloc\n";
+		// Place null terminator at end of the tape, to make printing easy
+		assemblyCode += "\t\tmov\t\tbyte [eax + ";
+		assemblyCode += castIntToString( env.cells );
+		assemblyCode += "] , 0\n";
 	}
 	// Pop malloc arg off stack
 	if ( useNASM )
@@ -307,14 +318,41 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	// Initialize the tape
 	assemblyCode += "\t\trep\t\tstosb\n";
 
+	// Set esi to 0, where 1 means we want to print configs, and 0 means no,
+	// and then get later whether we should assign 1 to esi
+	assemblyCode += "\t\tmov\t\tesi , 0\n";
+
+	// Check to see if we got any input
+	// Get argc
+	assemblyCode += "\t\tmov\t\teax , [ebp + 8]\n";
+	assemblyCode += "\t\tcmp\t\teax , 1\n";
+	assemblyCode += "\t\tje\t\tno_input\n";
+	assemblyCode += "\t\tcmp\t\teax , 2\n";
+	assemblyCode += "\t\tje\t\tinit_tape\n";
+	// If we got both an input string and an extra input, it means we want to
+	// print configs during execution
+	assemblyCode += "\t\tmov\t\tesi , 1\n\n";
+
+	assemblyCode += "init_tape:\n";
 	// Load the input into the tape
 	assemblyCode += "\t\tmov\t\teax , [ebp + 12]\n";
 	// Get arv[1]
 	assemblyCode += "\t\tmov\t\teax , [eax + 4]\n";
-	// Check if argv[1] is null
-	assemblyCode += "\t\tcmp\t\teax , 0\n";
-	// Jump past loading the tape if no tape input
-	assemblyCode += "\t\tje\t\tno_input\n";
+	// Load input onto tape
+	assemblyCode += "\t\tmov\t\tecx , 0\n\n";
+	assemblyCode += "load_input_loop:\n";
+	assemblyCode += "\t\tmov\t\tbl , [eax + ecx]\n";
+	assemblyCode += "\t\tmov\t\t[edx + ecx] , bl\n";
+	assemblyCode += "\t\tinc\t\tecx\n";
+	assemblyCode += "\t\tcmp\t\tbyte [eax + ecx] , 0\n";
+	assemblyCode += "\t\tje\t\tloaded_input\n";
+	assemblyCode += "\t\tcmp\t\tbyte [edx + ecx] , 0\n";
+	assemblyCode += "\t\tje\t\ttape_not_big_enough\n";
+	assemblyCode += "\t\tjmp\t\tload_input_loop\n\n";
+
+
+
+	/*
 	// Use ecx to keep track of tape to load input onto tape
 	assemblyCode += "\t\tmov\t\tecx , 0\n";
 	assemblyCode += "load_input_loop:\n";
@@ -328,6 +366,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	// Increment counter
 	assemblyCode += "\t\tinc\t\tecx\n";
 	assemblyCode += "\t\tjmp\t\tload_input_loop\n";
+	*/
 
 	assemblyCode += "no_input:\nloaded_input:\n";
 	// Initialize ecx to be position on tape
@@ -335,6 +374,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 
 	// edx = pointer to tape
 	// ecx = current tape position
+	// esi = 0 if no printing configs, 1 if printing configs
 	// eax , ebx = trash
 
 	// HERE PUT IN THE ACTUAL COMPILED CODE
@@ -343,10 +383,11 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 
 
 	assemblyCode += "\n";
-	// Preserve edx for this call
 
 	if ( useNASM )
 	{
+		// Preserve edx for this call
+		assemblyCode += "\t\tpush\tedx\n";
 		assemblyCode += "\t\tpush\tedx\n";
 		// Sanity check with printf output
 		assemblyCode += "\t\tpush\tdword str_ctrl\n";
@@ -364,6 +405,7 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	assemblyCode += "\t\tadd\t\tesp , 4\n";
 	if ( useNASM )
 	{
+		assemblyCode += "\t\tpop\t\tedx\n";
 		assemblyCode += "\t\tpop\t\tedx\n";
 	}
 	else
@@ -396,7 +438,26 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	}
 	// Return 0 to OS
 	assemblyCode += "\t\tmov\t\teax , 0\n";
-	assemblyCode += "\t\tret\n";
+	assemblyCode += "\t\tret\n\n";
+
+	if ( useNASM )
+	{
+		// Tape not big enough error
+		assemblyCode += "tape_not_big_enough:\n";
+		assemblyCode += "\t\tpush\tdword tape_err_str\n";
+		assemblyCode += "\t\tcall\tprintf\n";
+		assemblyCode += "\t\tmov\t\tesp , ebp\n";
+		assemblyCode += "\t\tpop\t\tebp\n";
+		// Return 0 to OS
+		assemblyCode += "\t\tmov\t\teax , 0\n";
+		assemblyCode += "\t\tret\n";
+	}
+	else
+	{
+
+	}
+
+
 
 	if ( verbose )
 	{
