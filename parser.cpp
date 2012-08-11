@@ -383,7 +383,7 @@ void printTuringEnv( const TuringEnv &env )
 {
 	std::cout << "Printing Turing Environment Information:\n" << std::endl;
 	std::cout << "Number of cells: " << env.cells << 
-		" (if 0, 5000 will be used)" << std::endl;
+		" (if 0, 1000 will be used)" << std::endl;
 	std::cout << "Speed of tape:   " << env.speed << " (seconds)" << std::endl;
 	std::cout << "Empty symbol:    " << env.empty << std::endl;
 	std::cout << "Start state:     " << env.start << std::endl;
