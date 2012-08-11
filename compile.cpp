@@ -128,7 +128,9 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		for ( int j = 0; j < env.states.at(i).getTransitions().size(); j++ )
 		{
 			if ( env.states.at(i).getTransitions().at(j).nextState.compare(
-				"accept" ) != 0 && 
+				"accept" ) != 0 &&
+				env.states.at(i).getTransitions().at(j).nextState.compare(
+				"reject" ) != 0 && 
 				std::find( stateNames.begin() , stateNames.end() , 
 				env.states.at(i).getTransitions().at(j).nextState ) == 
 				stateNames.end() )
@@ -169,9 +171,13 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	// apparently
 	if ( useNASM )
 	{
-		assemblyCode += "\t\textern\tprintf\n";
 		assemblyCode += "\t\textern\tmalloc\n";
 		assemblyCode += "\t\textern\tfree\n\n";
+		assemblyCode += "\t\textern\tprintf\n";
+		if ( env.speed > 0 )
+		{
+			assemblyCode += "\t\textern\tsleep\n\n";
+		}
 	}
 	// Here, allocate data we may need
 	if ( useNASM )
@@ -179,28 +185,42 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 		assemblyCode += "\t\tSECTION\t.data\n\n";
 		assemblyCode += "str_ctrl:\t\tdb\t\t\"Goodbye, world!\" , 10 , "
 			"\"Tape:\" , 10 , \"%s\" , 10 , 0\n";
+		assemblyCode += "trans_lim_str:\tdb\t\t\"Simulation continued " 
+			"beyond allowed number of transitions. Exiting.\" , 10 , 0\n";
 		assemblyCode += "tape_err_str:\tdb\t\t\"Tape of insufficient "
 			"size to accomodate input length. Exiting.\" , 10 , 0\n";
-		assemblyCode += "reject_str:\tdb\t\t10 , "
+		assemblyCode += "reject_str:\tdb\t\t"
 			"\"Input REJECTED.\" , 10 , 0\n";
-		assemblyCode += "accept_str:\tdb\t\t10 , "
+		assemblyCode += "accept_str:\tdb\t\t"
 			"\"Input ACCEPTED.\" , 10 , 0\n";
 		for ( int i = 0; i < env.states.size(); i++ )
 		{
 			assemblyCode += "config_print_";
 			assemblyCode += env.states.at(i).getName();
-			assemblyCode += ":\tdb\t\t10 , \"Configuration:\" , 10 , "
+			assemblyCode += ":\tdb\t\t\"Configuration:\" , 10 , "
 				"\"Tape:\" , 10 , \"%s\" , 10 , "
 				"\"Head over cell: %d\" , 10 , "
 				"\"In state: ";
 			assemblyCode += env.states.at(i).getName();
-			assemblyCode += "\" , 10 , 0\n";
+			assemblyCode += "\" , 10 , 10 , 0\n";
 		}
 		assemblyCode += "config_print_accept";
-		assemblyCode += ":\tdb\t\t10 , \"Ending Configuration:\" , 10 , "
+		assemblyCode += ":\tdb\t\t\"Ending Configuration (Success):\" , 10 , "
 			"\"Tape:\" , 10 , \"%s\" , 10 , "
 			"\"Head over cell: %d\" , 10 , "
-			"\"In state: accept\" , 10 , 0 \n";
+			"\"In state: accept\" , 10 , 10 , 0 \n";
+		assemblyCode += "config_print_reject";
+		assemblyCode += ":\tdb\t\t\"Ending Configuration (Failure):\" , 10 , "
+			"\"Tape:\" , 10 , \"%s\" , 10 , "
+			"\"Head over cell: %d\" , 10 , "
+			"\"In state: reject\" , 10 , 10 , 0 \n";
+		assemblyCode += "initial_config";
+		assemblyCode += ":\tdb\t\t\"Starting Configuration:\" , 10 , "
+			"\"Tape:\" , 10 , \"%s\" , 10 , "
+			"\"Head over cell: %d\" , 10 , "
+			"\"In state: ";
+		assemblyCode += env.start;
+		assemblyCode += "\" , 10 , 10 , 0 \n";
 	}
 	else
 	{
@@ -372,27 +392,29 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 
 
 
-	/*
-	// Use ecx to keep track of tape to load input onto tape
-	assemblyCode += "\t\tmov\t\tecx , 0\n";
-	assemblyCode += "load_input_loop:\n";
-	// Use ebx to hold character
-	assemblyCode += "\t\tmov\t\tebx , [eax + ecx]\n";
-	// Compare character against null char
-	assemblyCode += "\t\tcmp\t\tebx , 0\n";
-	assemblyCode += "\t\tje\t\tloaded_input\n";
-	// Load value onto tape
-	assemblyCode += "\t\tmov\t\t[edx + ecx] , ebx\n";
-	// Increment counter
-	assemblyCode += "\t\tinc\t\tecx\n";
-	assemblyCode += "\t\tjmp\t\tload_input_loop\n";
-	*/
 
 	assemblyCode += "no_input:\nloaded_input:\n";
 	// Initialize ecx to be position on tape
 	assemblyCode += "\t\tmov\t\tecx , 0\n";
 	// Initialize edi to be the count for the number of steps the machine takes
 	assemblyCode += "\t\tmov\t\tedi , 0\n";
+	// Print the initial config
+	assemblyCode += "\t\tcmp\t\tesi , 0\n";
+	assemblyCode += "\t\tje\t\tskip_print_init_config\n";
+	assemblyCode += "\t\tpush\teax\n";
+	assemblyCode += "\t\tpush\tecx\n";
+	assemblyCode += "\t\tpush\tedx\n";
+
+	assemblyCode += "\t\tpush\tecx\n";
+	assemblyCode += "\t\tpush\tedx\n";
+	assemblyCode += "\t\tpush\tinitial_config\n";
+	assemblyCode += "\t\tcall\tprintf\n";
+
+	assemblyCode += "\t\tadd\t\tesp , 12\n";
+	assemblyCode += "\t\tpop\t\tedx\n";
+	assemblyCode += "\t\tpop\t\tecx\n";
+	assemblyCode += "\t\tpop\t\teax\n";
+	assemblyCode += "skip_print_init_config:\n";
 	// Go to the first state
 	assemblyCode += "\t\tjmp\t\tstate_";
 	assemblyCode += env.start;
@@ -468,7 +490,20 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 			assemblyCode += ".state_bounds_low_skip_";
 			assemblyCode += castIntToString( j );
 			assemblyCode += ":\n";
-//--------- PUT SLEEP IN HERE
+			if ( env.speed > 0 )
+			{
+				assemblyCode += "\t\tpush\teax\n";
+				assemblyCode += "\t\tpush\tecx\n";
+				assemblyCode += "\t\tpush\tedx\n";
+				assemblyCode += "\t\tpush\tdword ";
+				assemblyCode += castIntToString( env.speed );
+				assemblyCode += "\n";
+				assemblyCode += "\t\tcall\tsleep\n";
+				assemblyCode += "\t\tadd\t\tesp , 4\n";
+				assemblyCode += "\t\tpop\t\tedx\n";
+				assemblyCode += "\t\tpop\t\tecx\n";
+				assemblyCode += "\t\tpop\t\teax\n";
+			}
 			// Print config info
 			assemblyCode += "\t\tcmp\t\tesi , 0\n";
 			assemblyCode += "\t\tje\t\t.no_config_print_";
@@ -491,14 +526,33 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 			assemblyCode += "\t\tpop\t\tecx\n";
 			assemblyCode += "\t\tpop\t\teax\n";
 
-			assemblyCode += "\n.no_config_print_";
+			assemblyCode += "\n.config_printed_";
 			assemblyCode += castIntToString( j );
 			assemblyCode += ":\n";
+			assemblyCode += ".no_config_print_";
+			assemblyCode += castIntToString( j );
+			assemblyCode += ":\n";
+			assemblyCode += "\t\tinc\t\tedi\n";
+			assemblyCode += "\t\tcmp\t\tedi , ";
+			assemblyCode += castIntToString( env.steps );
+			assemblyCode += "\n";
+			assemblyCode += "\t\tjge\t\ttransition_limit\n";
 			assemblyCode += "\t\tjmp\t\tstate_";
 			assemblyCode += transitions.at(j).nextState;
 			assemblyCode += "\n";
 		}
 	}
+	assemblyCode += "\ntransition_limit:\n";
+	assemblyCode += "\t\tpush\teax\n";
+	assemblyCode += "\t\tpush\tecx\n";
+	assemblyCode += "\t\tpush\tedx\n";
+	assemblyCode += "\t\tpush\ttrans_lim_str\n";
+	assemblyCode += "\t\tcall\tprintf\n";
+	assemblyCode += "\t\tadd\t\tesp , 4\n";
+	assemblyCode += "\t\tpop\t\tedx\n";
+	assemblyCode += "\t\tpop\t\tecx\n";
+	assemblyCode += "\t\tpop\t\teax\n";
+	assemblyCode += "\t\tjmp\t\texit_sim\n";
 
 	assemblyCode += "\nstate_reject:\n";
 	assemblyCode += "\t\tpush\teax\n";
@@ -524,37 +578,6 @@ void compile( const TuringEnv &env , bool verbose , bool link ,
 	assemblyCode += "\t\tpop\t\teax\n";
 
 	assemblyCode += "\nexit_sim:\n";
-	/*
-	if ( useNASM )
-	{
-		// Preserve edx for this call
-		assemblyCode += "\t\tpush\tedx\n";
-		assemblyCode += "\t\tpush\tedx\n";
-		// Sanity check with printf output
-		assemblyCode += "\t\tpush\tdword str_ctrl\n";
-	}
-	else
-	{
-		assemblyCode += "\t\tadd\t\tesp , -4\n";
-		assemblyCode += "\t\tmov\t\t[esp] , edx\n";
-		assemblyCode += "\t\tadd\t\tesp , -4\n";
-		assemblyCode += "\t\tmov\t\teax , str_ctrl\n";
-		assemblyCode += "\t\tmov\t\t[esp] , eax\n";
-	}
-	assemblyCode += "\t\tcall\tprintf\n";
-	// Get edx back
-	assemblyCode += "\t\tadd\t\tesp , 4\n";
-	if ( useNASM )
-	{
-		assemblyCode += "\t\tpop\t\tedx\n";
-		assemblyCode += "\t\tpop\t\tedx\n";
-	}
-	else
-	{
-		assemblyCode += "\t\tmov\t\tedx , [esp]\n";
-		assemblyCode += "\t\tadd\t\tesp , 4\n";
-	}
-	*/
 	// Free edx (tape pointer)
 	if ( useNASM )
 	{

@@ -6,6 +6,7 @@
 #start start_state
 #empty _
 #cells 500
+#speed 2
 
 state start_state
 	if A -> A , R

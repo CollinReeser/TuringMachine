@@ -94,6 +94,14 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				}
 				expects = 0;
 				env.speed = castStringToInt( token );
+				if ( env.speed <= 0 )
+				{
+					std::string error = "  Error on #speed directive:\n\t"
+						"Negative integer or 0 received [";
+					error += token;
+					error += "]; expected positive integer.";
+					throw error;
+				}
 			}
 			if ( token.compare( "empty" ) == 0 )
 			{
@@ -130,6 +138,14 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				}
 				expects = 0;
 				env.cells = castStringToInt( token );
+				if ( env.cells <= 0 )
+				{
+					std::string error = "  Error on #cells directive:\n\t"
+						"Negative integer or 0 received [";
+					error += token;
+					error += "]; expected positive integer.";
+					throw error;
+				}
 			}
 			if ( token.compare( "steps" ) == 0 )
 			{
@@ -142,6 +158,14 @@ TuringEnv parse( std::string rawInput , bool verbose )
 				}
 				expects = 0;
 				env.steps = castStringToInt( token );
+				if ( env.steps <= 0 )
+				{
+					std::string error = "  Error on #steps directive:\n\t"
+						"Negative integer or 0 received [";
+					error += token;
+					error += "]; expected positive integer.";
+					throw error;
+				}
 			}
 		}
 		else if ( token.compare( "state" ) == 0 )

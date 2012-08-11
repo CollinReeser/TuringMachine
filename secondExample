@@ -1,0 +1,117 @@
+// This implements L = { w#w | w in { 0 , 1 }* }
+
+#start start
+
+#speed 1
+
+#steps 15000
+
+#cells 400
+
+state start
+	if 0 -> a , R
+	{
+		one
+	}
+
+	if 1 -> b , R
+	{
+		five
+	}
+
+	if # -> # , R
+	{
+		cycle
+	}
+
+state cycle
+	if a -> a , R |
+		b -> b , R
+	{}
+
+	if _ -> _ , S
+	{
+		accept
+	}
+
+state one
+	if 0 -> 0 , R |
+		1 -> 1 , R
+	{}
+
+	if # -> # , R
+	{
+		two
+	}
+
+state two
+	if a -> a , R |
+		b -> b , R
+	{}
+
+	if 0 -> a, L
+	{
+		three
+	}
+
+state three
+	if a -> a , L|
+		b -> b,L
+	{}
+
+	if # -> # , L
+	{
+		four
+	}
+
+state four 
+	if 0 -> 0 , L |
+		1 -> 1 , L
+	{}
+
+	if a -> a,R |
+		b -> b, R
+	{
+		start
+	}
+
+state five
+	if 0 -> 0 , R |
+		1 -> 1 , R
+	{}
+
+	if # -> # , R
+	{
+		six
+	}
+
+state six
+	if a -> a , R |
+		b -> b , R
+	{}
+
+	if 1 -> b , L
+	{
+		seven
+	}
+
+state seven
+	if a -> a , L |
+		b -> b , L
+	{}
+
+	if # -> # , L
+	{
+		eight
+	}
+
+state eight
+	if 0 -> 0 , L |
+		1 -> 1 , L
+	{}
+
+	if a -> a , R |
+		b -> b , R
+	{
+		start
+	}

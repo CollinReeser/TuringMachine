@@ -129,3 +129,23 @@ Turing Tzarpit reference:
 			{
 				accept
 			}
+
+	The resultant executable produced from the compilation process of a Turing
+		Tzarpit source file is as follows:
+
+		- Running the executable by itself will act as though the simulation is
+			run without any input.
+		- Running the executable along with one extra argument will act as
+			though the argument is the string input to the Turing machine,
+			placing the input onto the beginning of the tape.
+		- Running the executable along with two extra arguments will act as
+			though the first argument is the string input to the Turing machine,
+			placing the input onto the beginning of the tape. The second
+			argument acts as a flag to the simulator that it should print out
+			configuration information at every transition. 
+
+	Additional notes:
+
+		This Turing Tzarpit compiler recognizes and ignores both single- and
+		multi-line C-style comments.
+		
