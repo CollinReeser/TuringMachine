@@ -83,7 +83,7 @@ Turing Tzarpit reference:
 			to initiate the transition. The second "C" is the character that
 			will be written to the tape as part of the transition. The choice
 			between 'R', 'L', and 'S' gives the option of moving the tape head
-			to the right ('R'), or to the left ('S'), or remaining stationary
+			to the right ('R'), or to the left ('L'), or remaining stationary
 			('S').
 
 			From here, either a pipe (|) or a left curly brace ({) is expected
